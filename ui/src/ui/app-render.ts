@@ -87,6 +87,7 @@ import {
   updateSkillEnabled,
 } from "./controllers/skills.ts";
 import "./components/dashboard-header.ts";
+import "./components/wallet-connect-button.js";
 import { buildExternalLinkRel, EXTERNAL_LINK_TARGET } from "./external-link.ts";
 import { icons } from "./icons.ts";
 import { normalizeBasePath, TAB_GROUPS, subtitleForTab, titleForTab } from "./navigation.ts";
@@ -459,6 +460,7 @@ export function renderApp(state: AppViewState) {
             </button>
             <div class="topbar-status">
               ${isChat ? renderChatMobileToggle(state) : nothing}
+              <wallet-connect-button class="wallet-connect-slot"></wallet-connect-button>
               ${renderTopbarThemeModeToggle(state)}
             </div>
           </div>

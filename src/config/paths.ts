@@ -225,6 +225,7 @@ export function resolveGatewayLockDir(tmpdir: () => string = os.tmpdir): string 
 }
 
 const OAUTH_FILENAME = "oauth.json";
+const ETHEREUM_WALLET_FILENAME = "ethereum-wallet.json";
 
 /**
  * OAuth credentials storage directory.
@@ -249,6 +250,13 @@ export function resolveOAuthPath(
   stateDir: string = resolveStateDir(env, envHomedir(env)),
 ): string {
   return path.join(resolveOAuthDir(env, stateDir), OAUTH_FILENAME);
+}
+
+export function resolveEthereumWalletPath(
+  env: NodeJS.ProcessEnv = process.env,
+  stateDir: string = resolveStateDir(env, envHomedir(env)),
+): string {
+  return path.join(resolveOAuthDir(env, stateDir), ETHEREUM_WALLET_FILENAME);
 }
 
 function parseGatewayPortEnvValue(raw: string | undefined): number | null {

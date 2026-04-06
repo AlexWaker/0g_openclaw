@@ -7,6 +7,7 @@ import {
   resolveDefaultConfigCandidates,
   resolveConfigPathCandidate,
   resolveConfigPath,
+  resolveEthereumWalletPath,
   resolveGatewayPort,
   resolveOAuthDir,
   resolveOAuthPath,
@@ -38,6 +39,9 @@ describe("oauth paths", () => {
     expect(resolveOAuthDir(env, "/custom/state")).toBe(path.join("/custom/state", "credentials"));
     expect(resolveOAuthPath(env, "/custom/state")).toBe(
       path.join("/custom/state", "credentials", "oauth.json"),
+    );
+    expect(resolveEthereumWalletPath(env, "/custom/state")).toBe(
+      path.join("/custom/state", "credentials", "ethereum-wallet.json"),
     );
   });
 });

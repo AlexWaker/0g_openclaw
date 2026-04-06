@@ -28,6 +28,13 @@ const warnIfModelConfigLooksOff = vi.hoisted(() => vi.fn(async () => {}));
 const applyPrimaryModel = vi.hoisted(() => vi.fn((cfg) => cfg));
 const promptDefaultModel = vi.hoisted(() => vi.fn(async () => ({ config: null, model: null })));
 const promptCustomApiConfig = vi.hoisted(() => vi.fn(async (args) => ({ config: args.config })));
+const promptSetupEthereumWallet = vi.hoisted(() =>
+  vi.fn(async () => ({
+    status: "skipped",
+    path: "/tmp/.openclaw/credentials/ethereum-wallet.json",
+  })),
+);
+const applySetupEthereumWalletSelection = vi.hoisted(() => vi.fn(() => {}));
 const configureGatewayForSetup = vi.hoisted(() =>
   vi.fn(async (args) => ({
     nextConfig: args.nextConfig,
@@ -152,6 +159,11 @@ vi.mock("../commands/model-picker.js", () => ({
 
 vi.mock("../commands/onboard-custom.js", () => ({
   promptCustomApiConfig,
+}));
+
+vi.mock("./setup.wallet.js", () => ({
+  promptSetupEthereumWallet,
+  applySetupEthereumWalletSelection,
 }));
 
 vi.mock("../commands/health.js", () => ({
@@ -315,7 +327,43 @@ describe("runSetupWizard", () => {
     expect(prompter.outro).toHaveBeenCalled();
   });
 
+  it("runs wallet setup before prompting for auth choice", async () => {
+    promptSetupEthereumWallet.mockClear();
+    promptAuthChoiceGrouped.mockClear();
+    applySetupEthereumWalletSelection.mockClear();
+
+    const runtime = createRuntime();
+    const prompter = buildWizardPrompter({
+      confirm: vi.fn(async () => true),
+      select: vi.fn(async (params: WizardSelectParams) => {
+        if (params.message === "Setup mode") {
+          return "quickstart";
+        }
+        if (params.message === "How do you want to hatch your bot?") {
+          return "skip";
+        }
+        return params.options[0]?.value ?? "quickstart";
+      }) as unknown as WizardPrompter["select"],
+    });
+
+    await runSetupWizard({}, runtime, prompter);
+
+    expect(promptSetupEthereumWallet).toHaveBeenCalledTimes(1);
+    expect(promptAuthChoiceGrouped).toHaveBeenCalledTimes(1);
+    expect(promptSetupEthereumWallet.mock.invocationCallOrder[0]).toBeLessThan(
+      promptAuthChoiceGrouped.mock.invocationCallOrder[0],
+    );
+    expect(applySetupEthereumWalletSelection).toHaveBeenCalledTimes(1);
+  });
+
   it("skips prompts and setup steps when flags are set", async () => {
+    promptSetupEthereumWallet.mockClear();
+    applySetupEthereumWalletSelection.mockClear();
+    setupChannels.mockClear();
+    setupSkills.mockClear();
+    healthCommand.mockClear();
+    runTui.mockClear();
+
     const select = vi.fn(
       async (_params: WizardSelectParams<unknown>) => "quickstart",
     ) as unknown as WizardPrompter["select"];
@@ -340,6 +388,8 @@ describe("runSetupWizard", () => {
     );
 
     expect(select).not.toHaveBeenCalled();
+    expect(promptSetupEthereumWallet).not.toHaveBeenCalled();
+    expect(applySetupEthereumWalletSelection).toHaveBeenCalledTimes(1);
     expect(setupChannels).not.toHaveBeenCalled();
     expect(setupSkills).not.toHaveBeenCalled();
     expect(healthCommand).not.toHaveBeenCalled();

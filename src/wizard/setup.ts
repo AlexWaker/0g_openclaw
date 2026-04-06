@@ -482,6 +482,13 @@ export async function runSetupWizard(
 
   const { applyLocalSetupWorkspaceConfig } = await import("../commands/onboard-config.js");
   let nextConfig: OpenClawConfig = applyLocalSetupWorkspaceConfig(baseConfig, workspaceDir);
+  const { applySetupEthereumWalletSelection, promptSetupEthereumWallet } =
+    await import("./setup.wallet.js");
+  const { resolveEthereumWalletPath } = await import("../config/paths.js");
+  const shouldPromptWalletSetup = !(opts.skipProviders || opts.authChoice);
+  const walletSelection = shouldPromptWalletSetup
+    ? await promptSetupEthereumWallet({ prompter })
+    : { status: "skipped" as const, path: resolveEthereumWalletPath() };
 
   const { ensureAuthProfileStore } = await import("../agents/auth-profiles.runtime.js");
   const { promptAuthChoiceGrouped } = await import("../commands/auth-choice-prompt.js");
@@ -600,6 +607,12 @@ export async function runSetupWizard(
   }
 
   await writeConfigFile(nextConfig);
+  applySetupEthereumWalletSelection(walletSelection);
+  if (walletSelection.status === "set") {
+    await prompter.note(`Saved Ethereum wallet secret to ${walletSelection.path}.`, "Wallet");
+  } else if (walletSelection.status === "remove") {
+    await prompter.note(`Removed Ethereum wallet secret from ${walletSelection.path}.`, "Wallet");
+  }
   const { logConfigUpdated } = await import("../config/logging.js");
   logConfigUpdated(runtime);
   await onboardHelpers.ensureWorkspaceAndSessions(workspaceDir, runtime, {

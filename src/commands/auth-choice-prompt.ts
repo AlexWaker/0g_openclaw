@@ -28,7 +28,8 @@ export async function promptAuthChoiceGrouped(params: {
     ];
 
     const providerSelection = (await params.prompter.select({
-      message: "Model/auth provider",
+      message:
+        "Model/auth provider (optional: you can skip provider setup and use models from the 0G Compute Market directly, with security provided by 0G)",
       options: providerOptions,
     })) as string;
 

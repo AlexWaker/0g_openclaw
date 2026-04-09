@@ -2,17 +2,26 @@ import { ConnectButton, RainbowKitProvider, darkTheme, lightTheme } from "@rainb
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { createRoot } from "react-dom/client";
+// import { mainnet } from "wagmi/chains";
+import { zeroGMainnet } from "viem/chains";
 import { WagmiProvider, createConfig, http, injected } from "wagmi";
-import { mainnet } from "wagmi/chains";
 
 const queryClient = new QueryClient();
+export const walletConnectChain = zeroGMainnet;
+export const walletConnectInitialChain = walletConnectChain;
+export const walletConnectChains = [walletConnectChain];
+export const walletConnectTransports = {
+  [walletConnectChain.id]: http(),
+};
 
 const wagmiConfig = createConfig({
-  chains: [mainnet],
+  // chains: [mainnet],
+  chains: walletConnectChains,
   connectors: [injected()],
   ssr: false,
   transports: {
-    [mainnet.id]: http(),
+    // [mainnet.id]: http(),
+    ...walletConnectTransports,
   },
 });
 
@@ -47,7 +56,8 @@ function WalletConnectApp() {
       { client: queryClient },
       React.createElement(
         RainbowKitProvider,
-        { theme, initialChain: mainnet },
+        // { theme, initialChain: mainnet },
+        { theme, initialChain: walletConnectInitialChain },
         React.createElement(ConnectButton, {
           showBalance: false,
           chainStatus: "icon",

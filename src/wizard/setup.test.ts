@@ -327,7 +327,7 @@ describe("runSetupWizard", () => {
     expect(prompter.outro).toHaveBeenCalled();
   });
 
-  it("runs wallet setup before prompting for auth choice", async () => {
+  it("runs wallet setup without prompting for auth choice", async () => {
     promptSetupEthereumWallet.mockClear();
     promptAuthChoiceGrouped.mockClear();
     applySetupEthereumWalletSelection.mockClear();
@@ -349,10 +349,11 @@ describe("runSetupWizard", () => {
     await runSetupWizard({}, runtime, prompter);
 
     expect(promptSetupEthereumWallet).toHaveBeenCalledTimes(1);
-    expect(promptAuthChoiceGrouped).toHaveBeenCalledTimes(1);
-    expect(promptSetupEthereumWallet.mock.invocationCallOrder[0]).toBeLessThan(
-      promptAuthChoiceGrouped.mock.invocationCallOrder[0],
-    );
+    // expect(promptAuthChoiceGrouped).toHaveBeenCalledTimes(1);
+    // expect(promptSetupEthereumWallet.mock.invocationCallOrder[0]).toBeLessThan(
+    //   promptAuthChoiceGrouped.mock.invocationCallOrder[0],
+    // );
+    expect(promptAuthChoiceGrouped).not.toHaveBeenCalled();
     expect(applySetupEthereumWalletSelection).toHaveBeenCalledTimes(1);
   });
 
@@ -487,7 +488,7 @@ describe("runSetupWizard", () => {
     }
   });
 
-  it("prompts for a model during explicit interactive Ollama setup", async () => {
+  it("skips the default model prompt during explicit interactive Ollama setup", async () => {
     promptDefaultModel.mockClear();
     resolveProviderPluginChoice.mockReturnValue({
       provider: {
@@ -534,11 +535,12 @@ describe("runSetupWizard", () => {
       prompter,
     );
 
-    expect(promptDefaultModel).toHaveBeenCalledWith(
-      expect.objectContaining({
-        allowKeep: false,
-      }),
-    );
+    // expect(promptDefaultModel).toHaveBeenCalledWith(
+    //   expect.objectContaining({
+    //     allowKeep: false,
+    //   }),
+    // );
+    expect(promptDefaultModel).not.toHaveBeenCalled();
   });
 
   it("shows plugin compatibility notices for an existing valid config", async () => {

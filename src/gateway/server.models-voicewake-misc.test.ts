@@ -344,6 +344,30 @@ describe("gateway server models + voicewake", () => {
     });
   });
 
+  test("models.list can include unallowlisted catalog entries for the chat picker", async () => {
+    await withModelsConfig(
+      {
+        agents: {
+          defaults: {
+            model: { primary: "openai/gpt-test-z" },
+            models: {
+              "openai/gpt-test-z": {},
+              "anthropic/claude-test-a": {},
+            },
+          },
+        },
+      },
+      async () => {
+        seedPiCatalog();
+        const res = await rpcReq<{ models: ModelCatalogRpcEntry[] }>(ws, "models.list", {
+          includeUnallowlisted: true,
+        });
+        expect(res.ok).toBe(true);
+        expect(res.payload?.models).toEqual(expectedSortedCatalog());
+      },
+    );
+  });
+
   test("models.list includes synthetic entries for allowlist models absent from catalog", async () => {
     await expectAllowlistedModels({
       primary: "openai/not-in-catalog",

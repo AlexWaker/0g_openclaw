@@ -10,8 +10,12 @@ import type { ModelCatalogEntry } from "../types.ts";
  */
 export async function loadModels(client: GatewayBrowserClient): Promise<ModelCatalogEntry[]> {
   try {
-    const result = await client.request<{ models: ModelCatalogEntry[] }>("models.list", {});
-    return result?.models ?? [];
+    // const result = await client.request<{ models: ModelCatalogEntry[] }>("models.list", {});
+    const result = await client.request<{ models: ModelCatalogEntry[] }>("models.list", {
+      includeUnallowlisted: true,
+    });
+    // return result?.models ?? [];
+    return (result?.models ?? []).filter((entry) => entry.provider?.trim().toLowerCase() === "0g");
   } catch {
     return [];
   }

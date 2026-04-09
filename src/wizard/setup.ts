@@ -19,6 +19,8 @@ import { WizardCancelledError, type WizardPrompter } from "./prompts.js";
 import { resolveSetupSecretInputString } from "./setup.secret-input.js";
 import type { QuickstartGatewayDefaults, WizardFlow } from "./setup.types.js";
 
+// Temporarily disabled while auth/provider and default-model setup prompts are skipped.
+/*
 async function resolveAuthChoiceModelSelectionPolicy(params: {
   authChoice: string;
   config: OpenClawConfig;
@@ -69,6 +71,7 @@ async function resolveAuthChoiceModelSelectionPolicy(params: {
     allowKeepCurrent: setupPolicy?.allowKeepCurrent ?? true,
   };
 }
+*/
 
 async function requireRiskAcknowledgement(params: {
   opts: OnboardOptions;
@@ -490,13 +493,21 @@ export async function runSetupWizard(
     ? await promptSetupEthereumWallet({ prompter })
     : { status: "skipped" as const, path: resolveEthereumWalletPath() };
 
-  const { ensureAuthProfileStore } = await import("../agents/auth-profiles.runtime.js");
-  const { promptAuthChoiceGrouped } = await import("../commands/auth-choice-prompt.js");
+  // const { ensureAuthProfileStore } = await import("../agents/auth-profiles.runtime.js");
+  // const { promptAuthChoiceGrouped } = await import("../commands/auth-choice-prompt.js");
   const { promptCustomApiConfig } = await import("../commands/onboard-custom.js");
-  const { applyAuthChoice, resolvePreferredProviderForAuthChoice, warnIfModelConfigLooksOff } =
-    await import("../commands/auth-choice.js");
-  const { applyPrimaryModel, promptDefaultModel } = await import("../commands/model-picker.js");
+  // const { applyAuthChoice, resolvePreferredProviderForAuthChoice, warnIfModelConfigLooksOff } =
+  //   await import("../commands/auth-choice.js");
+  // const { applyAuthChoice, warnIfModelConfigLooksOff } = await import(
+  //   "../commands/auth-choice.js"
+  // );
+  const { applyAuthChoice } = await import("../commands/auth-choice.js");
+  // const { applyPrimaryModel, promptDefaultModel } = await import("../commands/model-picker.js");
+  const { applyPrimaryModel } = await import("../commands/model-picker.js");
 
+  // Temporarily skip the interactive auth-provider selection step during setup.
+  const authChoice = opts.authChoice ?? "skip";
+  /*
   const authStore = ensureAuthProfileStore(undefined, {
     allowKeychainPrompt: false,
   });
@@ -510,6 +521,7 @@ export async function runSetupWizard(
       config: nextConfig,
       workspaceDir,
     }));
+  */
 
   if (authChoice === "custom-api-key") {
     const customResult = await promptCustomApiConfig({
@@ -538,6 +550,8 @@ export async function runSetupWizard(
     }
   }
 
+  // Temporarily skip the interactive default-model selection step during setup.
+  /*
   const authChoiceModelSelectionPolicy =
     authChoice === "custom-api-key"
       ? undefined
@@ -568,8 +582,9 @@ export async function runSetupWizard(
       nextConfig = applyPrimaryModel(nextConfig, modelSelection.model);
     }
   }
+  */
 
-  await warnIfModelConfigLooksOff(nextConfig, prompter);
+  // await warnIfModelConfigLooksOff(nextConfig, prompter);
 
   const { configureGatewayForSetup } = await import("./setup.gateway-config.js");
   const gateway = await configureGatewayForSetup({

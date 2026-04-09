@@ -29,6 +29,19 @@ describe("chat-model-ref helpers", () => {
     });
   });
 
+  it("uses the friendly display name for 0g catalog entries", () => {
+    expect(
+      buildChatModelOption({
+        id: "svc_demo",
+        name: "DeepSeek R1 (0x1234...abcd)",
+        provider: "0g",
+      }),
+    ).toEqual({
+      value: "0g/svc_demo",
+      label: "DeepSeek R1 (0x1234...abcd) · 0g",
+    });
+  });
+
   it("normalizes raw overrides when the catalog match is unique", () => {
     expect(normalizeChatModelOverrideValue(createChatModelOverride("gpt-5-mini"), catalog)).toBe(
       "openai/gpt-5-mini",

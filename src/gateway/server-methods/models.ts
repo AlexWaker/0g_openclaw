@@ -30,7 +30,13 @@ export const modelsHandlers: GatewayRequestHandlers = {
         catalog,
         defaultProvider: DEFAULT_PROVIDER,
       });
-      const models = allowedCatalog.length > 0 ? allowedCatalog : catalog;
+      // const models = allowedCatalog.length > 0 ? allowedCatalog : catalog;
+      const models =
+        params.includeUnallowlisted === true
+          ? catalog
+          : allowedCatalog.length > 0
+            ? allowedCatalog
+            : catalog;
       respond(true, { models }, undefined);
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));

@@ -1145,6 +1145,35 @@ describe("chat view", () => {
     expect(optionValues).not.toContain("gpt-5-mini");
   });
 
+  it("does not duplicate the default model in the chat header picker", () => {
+    const { state } = createChatHeaderState({
+      models: createModelCatalog(
+        { id: "claude-opus-4-6", name: "Claude Opus 4.6", provider: "anthropic" },
+        DEEPSEEK_CHAT_MODEL,
+      ),
+    });
+    state.sessionsResult = createSessionsListResult({
+      defaultsModel: "claude-opus-4-6",
+      defaultsProvider: "anthropic",
+    });
+
+    const container = document.createElement("div");
+    render(renderChatSessionSelect(state), container);
+
+    const modelSelect = container.querySelector<HTMLSelectElement>(
+      'select[data-chat-model-select="true"]',
+    );
+    expect(modelSelect).not.toBeNull();
+    expect(modelSelect?.value).toBe("");
+
+    const options = Array.from(modelSelect?.querySelectorAll("option") ?? []).map((option) => ({
+      value: option.value,
+      label: option.textContent?.trim() ?? "",
+    }));
+    expect(options[0]?.label).toContain("claude-opus-4-6");
+    expect(options.map((option) => option.value)).toEqual(["", "deepseek/deepseek-chat"]);
+  });
+
   it("prefers the session label over displayName in the grouped chat session selector", () => {
     const { state } = createChatHeaderState({ omitSessionFromList: true });
     state.sessionKey = "agent:main:subagent:4f2146de-887b-4176-9abe-91140082959b";

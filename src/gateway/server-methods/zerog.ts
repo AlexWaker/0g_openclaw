@@ -19,6 +19,9 @@ function respondZeroGError(
   respond: Parameters<GatewayRequestHandlers[string]>[0]["respond"],
   err: unknown,
 ) {
+  const message =
+    err instanceof Error ? err.message.replace(/^(?:Error:\s*)+/i, "").trim() : String(err);
+
   if (err instanceof ZeroGOperationError) {
     respond(
       false,
@@ -31,7 +34,7 @@ function respondZeroGError(
     return;
   }
 
-  respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
+  respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, message || "0G request failed."));
 }
 
 export const zeroGHandlers: GatewayRequestHandlers = {

@@ -60,6 +60,7 @@ function buildChatModelOptions(
 ): ChatModelSelectOption[] {
   const seen = new Set<string>();
   const options: ChatModelSelectOption[] = [];
+  const defaultKey = defaultModel.trim().toLowerCase();
 
   const addOption = (value: string, label?: string) => {
     const trimmed = value.trim();
@@ -67,6 +68,9 @@ function buildChatModelOptions(
       return;
     }
     const key = trimmed.toLowerCase();
+    if (defaultKey && key === defaultKey) {
+      return;
+    }
     if (seen.has(key)) {
       return;
     }
@@ -91,8 +95,12 @@ function buildChatModelOptions(
 export function resolveChatModelSelectState(
   state: ChatModelSelectStateInput,
 ): ChatModelSelectState {
-  const currentOverride = resolveChatModelOverrideValue(state);
   const defaultModel = resolveDefaultModelValue(state);
+  const resolvedOverride = resolveChatModelOverrideValue(state);
+  const currentOverride =
+    defaultModel && resolvedOverride.trim().toLowerCase() === defaultModel.trim().toLowerCase()
+      ? ""
+      : resolvedOverride;
   const defaultDisplay = formatChatModelDisplay(defaultModel);
 
   return {

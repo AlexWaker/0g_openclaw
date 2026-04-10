@@ -55,4 +55,25 @@ describe("chat-model-select-state", () => {
     expect(resolved.options.map((option) => option.value)).toContain("openai/gpt-5-mini");
     expect(resolved.options.map((option) => option.value)).not.toContain("gpt-5-mini");
   });
+
+  it("hides a catalog entry when it matches the current default model", () => {
+    const state = {
+      sessionKey: "main",
+      chatModelOverrides: {},
+      chatModelCatalog: createModelCatalog(
+        { id: "claude-opus-4-6", name: "Claude Opus 4.6", provider: "anthropic" },
+        DEEPSEEK_CHAT_MODEL,
+      ),
+      sessionsResult: createSessionsListResult({
+        model: "deepseek-chat",
+        modelProvider: "deepseek",
+        defaultsModel: "claude-opus-4-6",
+        defaultsProvider: "anthropic",
+      }),
+    };
+
+    const resolved = resolveChatModelSelectState(state);
+    expect(resolved.defaultModel).toBe("anthropic/claude-opus-4-6");
+    expect(resolved.options.map((option) => option.value)).toEqual(["deepseek/deepseek-chat"]);
+  });
 });

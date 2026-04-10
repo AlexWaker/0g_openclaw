@@ -55,6 +55,14 @@ function formatZeroGReadError(err: unknown): string {
     : String(err);
 }
 
+function formatZeroGMutationError(err: unknown): string {
+  if (isMissingOperatorReadScopeError(err)) {
+    return formatMissingOperatorReadScopeMessage("0G account changes");
+  }
+  const raw = err instanceof Error ? err.message : String(err);
+  return raw.replace(/^(?:GatewayRequestError:\s*)?(?:Error:\s*)+/i, "").trim() || raw;
+}
+
 export async function loadZeroGAccountState(
   state: ZeroGAccountLoadState,
   explicitModel?: string | null,
@@ -162,7 +170,7 @@ async function runZeroGMutation(
       state.zeroGFundingProviderAmount = "";
     }
   } catch (err) {
-    state.zeroGFundingError = String(err);
+    state.zeroGFundingError = formatZeroGMutationError(err);
   } finally {
     state.zeroGFundingBusy = false;
     state.zeroGFundingAction = null;

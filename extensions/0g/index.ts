@@ -75,6 +75,19 @@ type ZeroGInferenceApiKeyBroker = {
   ) => Promise<ZeroGApiKeyInfo>;
 };
 
+type ZeroGServingRequestHeaders = {
+  Authorization?: string;
+  authorization?: string;
+};
+
+type ZeroGInferenceRuntimeAuthBroker = {
+  getRequestHeaders?: (
+    providerAddress: string,
+    content?: string,
+  ) => Promise<ZeroGServingRequestHeaders>;
+  requestProcessor?: ZeroGInferenceApiKeyBroker;
+};
+
 type ZeroGResolveSyntheticAuthContext = {
   config?: unknown;
   provider: string;
@@ -318,6 +331,19 @@ function buildZeroGRuntimeModel(modelId: string): ProviderRuntimeModel | undefin
   };
 }
 
+function extractBearerToken(headers: ZeroGServingRequestHeaders | null | undefined): string | null {
+  const rawAuthorization = headers?.Authorization ?? headers?.authorization;
+  if (typeof rawAuthorization !== "string") {
+    return null;
+  }
+  const trimmed = rawAuthorization.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const bearerPrefix = /^Bearer\s+/i;
+  return bearerPrefix.test(trimmed) ? trimmed.replace(bearerPrefix, "") : trimmed;
+}
+
 export function resetZeroGModelCatalogCache(): void {
   zeroGModelCacheExpiresAt = 0;
   zeroGModelCachePromise = null;
@@ -367,9 +393,36 @@ export function buildZeroGProvider() {
       }
 
       const metadata = await broker.inference.getServiceMetadata(parsed.providerAddress);
-      const apiKey = await (
-        broker.inference as typeof broker.inference & ZeroGInferenceApiKeyBroker
-      ).createApiKey(parsed.providerAddress, {
+      const runtimeAuthBroker = broker.inference as typeof broker.inference &
+        ZeroGInferenceRuntimeAuthBroker &
+        Partial<ZeroGInferenceApiKeyBroker>;
+      const runtimeHeaders =
+        typeof runtimeAuthBroker.getRequestHeaders === "function"
+          ? await runtimeAuthBroker.getRequestHeaders(parsed.providerAddress)
+          : null;
+      const ephemeralApiKey = extractBearerToken(runtimeHeaders);
+      if (ephemeralApiKey) {
+        return {
+          apiKey: ephemeralApiKey,
+          ...(metadata.endpoint?.trim() ? { baseUrl: metadata.endpoint.trim() } : {}),
+          expiresAt: Date.now() + ZERO_G_RUNTIME_TOKEN_TTL_MS,
+        };
+      }
+
+      const createApiKey =
+        typeof runtimeAuthBroker.createApiKey === "function"
+          ? runtimeAuthBroker.createApiKey.bind(runtimeAuthBroker)
+          : typeof runtimeAuthBroker.requestProcessor?.createApiKey === "function"
+            ? runtimeAuthBroker.requestProcessor.createApiKey.bind(
+                runtimeAuthBroker.requestProcessor,
+              )
+            : null;
+      if (!createApiKey) {
+        throw new Error(
+          "The installed 0G broker does not expose getRequestHeaders or createApiKey for runtime auth.",
+        );
+      }
+      const apiKey = await createApiKey(parsed.providerAddress, {
         expiresIn: ZERO_G_RUNTIME_TOKEN_TTL_MS,
       });
       return {

@@ -205,12 +205,60 @@ describe("0g provider", () => {
           endpoint: "https://provider.example/v1/proxy",
           model: "deepseek-r1",
         })),
-        createApiKey: vi.fn(async () => ({
-          tokenId: 1,
-          createdAt: 1,
-          expiresAt: 999999,
-          rawToken: "app-sk-123",
+        getRequestHeaders: vi.fn(async () => ({
+          Authorization: "Bearer app-sk-ephemeral-123",
         })),
+      },
+    });
+
+    const provider = buildZeroGProvider();
+    const modelId = encodeZeroGModelRef({
+      providerAddress: "0x123400000000000000000000000000000000abcd",
+      model: "deepseek-r1",
+      serviceType: "chatbot",
+    });
+    const runtimeModel = provider.resolveDynamicModel?.({
+      provider: "0g",
+      modelId,
+      modelRegistry: {} as never,
+    });
+
+    await expect(
+      provider.prepareRuntimeAuth?.({
+        config: undefined,
+        agentDir: stateDir,
+        workspaceDir: stateDir,
+        env: process.env,
+        provider: "0g",
+        modelId,
+        model: runtimeModel as never,
+        apiKey: "__openclaw_0g_wallet__",
+        authMode: "api-key",
+      }),
+    ).resolves.toEqual({
+      apiKey: "app-sk-ephemeral-123",
+      baseUrl: "https://provider.example/v1/proxy",
+      expiresAt: expect.any(Number),
+    });
+  });
+
+  it("falls back to requestProcessor.createApiKey when request headers are unavailable", async () => {
+    await writeWalletSecret();
+    createZGComputeNetworkBrokerMock.mockResolvedValue({
+      inference: {
+        acknowledged: vi.fn(async () => true),
+        getServiceMetadata: vi.fn(async () => ({
+          endpoint: "https://provider.example/v1/proxy",
+          model: "deepseek-r1",
+        })),
+        requestProcessor: {
+          createApiKey: vi.fn(async () => ({
+            tokenId: 1,
+            createdAt: 1,
+            expiresAt: 999999,
+            rawToken: "app-sk-123",
+          })),
+        },
       },
     });
 

@@ -1,15 +1,22 @@
 import { resetToolStream } from "../app-tool-stream.ts";
+import { resolveChatModelOverrideValue } from "../chat-model-select-state.ts";
 import { extractText } from "../chat/message-extract.ts";
 import { formatConnectError } from "../connect-error.ts";
 import type { GatewayBrowserClient } from "../gateway.ts";
+import type { ChatModelOverride, ModelCatalogEntry, SessionsListResult } from "../types.ts";
 import type { ChatAttachment } from "../ui-types.ts";
 import { generateUUID } from "../uuid.ts";
 import {
   formatMissingOperatorReadScopeMessage,
   isMissingOperatorReadScopeError,
 } from "./scope-errors.ts";
+import { openZeroGFundingDialog, type ZeroGFundingState } from "./zero-g.ts";
 
 const SILENT_REPLY_PATTERN = /^\s*NO_REPLY\s*$/;
+const ZERO_G_FUNDING_ERROR_PATTERN =
+  /(insufficient balance|insufficient funds|no funds in provider sub-account|sub-account not found|no sub-account found|please transfer funds first|transfer funds into the provider sub-account|fund the main 0g account)/i;
+const ZERO_G_FUNDING_GUIDANCE =
+  "0G balance is too low for this provider. Add funds to the main account or provider sub-account, then try again.";
 
 function isSilentReplyStream(text: string): boolean {
   return SILENT_REPLY_PATTERN.test(text);
@@ -36,6 +43,9 @@ export type ChatState = {
   client: GatewayBrowserClient | null;
   connected: boolean;
   sessionKey: string;
+  chatModelOverrides?: Record<string, ChatModelOverride | null>;
+  chatModelCatalog?: ModelCatalogEntry[];
+  sessionsResult?: SessionsListResult | null;
   chatLoading: boolean;
   chatMessages: unknown[];
   chatThinkingLevel: string | null;
@@ -46,7 +56,54 @@ export type ChatState = {
   chatStream: string | null;
   chatStreamStartedAt: number | null;
   lastError: string | null;
+  zeroGAccountSummary?: { selectedModel?: string | null } | null;
+  zeroGFundingDialogOpen?: boolean;
+  zeroGFundingBusy?: boolean;
+  zeroGFundingAction?: "main" | "provider" | "acknowledge" | null;
+  zeroGFundingMainAmount?: string;
+  zeroGFundingProviderAmount?: string;
+  zeroGFundingError?: string | null;
+  zeroGFundingSuccess?: string | null;
 };
+
+function resolveSelectedZeroGModel(state: ChatState): string | null {
+  if (state.chatModelOverrides && Array.isArray(state.chatModelCatalog)) {
+    const resolved = resolveChatModelOverrideValue({
+      sessionKey: state.sessionKey,
+      chatModelOverrides: state.chatModelOverrides,
+      chatModelCatalog: state.chatModelCatalog,
+      sessionsResult: state.sessionsResult ?? null,
+    });
+    if (resolved.trim().toLowerCase().startsWith("0g/")) {
+      return resolved.trim();
+    }
+  }
+
+  const summaryModel = state.zeroGAccountSummary?.selectedModel;
+  return typeof summaryModel === "string" && summaryModel.trim().toLowerCase().startsWith("0g/")
+    ? summaryModel.trim()
+    : null;
+}
+
+function maybePromoteZeroGFundingError(state: ChatState, error: string): string {
+  if (!ZERO_G_FUNDING_ERROR_PATTERN.test(error) || !resolveSelectedZeroGModel(state)) {
+    return error;
+  }
+
+  const fundingState = state as ChatState & Partial<ZeroGFundingState>;
+  if (
+    typeof fundingState.zeroGFundingDialogOpen === "boolean" &&
+    typeof fundingState.zeroGFundingBusy === "boolean" &&
+    typeof fundingState.zeroGFundingMainAmount === "string" &&
+    typeof fundingState.zeroGFundingProviderAmount === "string"
+  ) {
+    openZeroGFundingDialog(fundingState as ZeroGFundingState);
+    fundingState.zeroGFundingError = ZERO_G_FUNDING_GUIDANCE;
+    fundingState.zeroGFundingSuccess = null;
+  }
+
+  return `${ZERO_G_FUNDING_GUIDANCE} ${error}`;
+}
 
 export type ChatEventPayload = {
   runId: string;
@@ -234,7 +291,7 @@ export async function sendChatMessage(
     });
     return runId;
   } catch (err) {
-    const error = formatConnectError(err);
+    const error = maybePromoteZeroGFundingError(state, formatConnectError(err));
     state.chatRunId = null;
     state.chatStream = null;
     state.chatStreamStartedAt = null;
@@ -341,7 +398,7 @@ export function handleChatEvent(state: ChatState, payload?: ChatEventPayload) {
     state.chatStream = null;
     state.chatRunId = null;
     state.chatStreamStartedAt = null;
-    state.lastError = payload.errorMessage ?? "chat error";
+    state.lastError = maybePromoteZeroGFundingError(state, payload.errorMessage ?? "chat error");
   }
   return payload.state;
 }

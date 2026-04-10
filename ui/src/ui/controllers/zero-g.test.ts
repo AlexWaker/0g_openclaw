@@ -3,6 +3,7 @@ import {
   acknowledgeZeroGProvider,
   closeZeroGFundingDialog,
   fundZeroGMainAccount,
+  fundZeroGProviderAccount,
   loadZeroGAccountState,
   openZeroGFundingDialog,
   resolveSelectedZeroGModelValue,
@@ -142,5 +143,15 @@ describe("zero-g controller", () => {
       model: QUALIFIED_MODEL,
     });
     expect(state.zeroGFundingSuccess).toBe("Provider acknowledged for this wallet.");
+  });
+
+  it("surfaces cleaned provider-funding errors without GatewayRequestError prefixes", async () => {
+    const { state, request } = createState();
+    state.zeroGFundingProviderAmount = "1";
+    request.mockRejectedValue(new Error("GatewayRequestError: Error: Error: CallFailed"));
+
+    await fundZeroGProviderAccount(state);
+
+    expect(state.zeroGFundingError).toBe("CallFailed");
   });
 });

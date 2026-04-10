@@ -15,6 +15,7 @@ const ZERO_G_MODEL_REF_PREFIX = "svc_";
 const ZERO_G_TESTNET_RPC_URL = "https://evmrpc-testnet.0g.ai";
 const ZERO_G_MAINNET_RPC_URL = "https://evmrpc.0g.ai";
 const ZERO_G_DECIMALS = 18;
+const ZERO_G_MIN_PROVIDER_TRANSFER_UNITS = 10n ** 18n;
 const ZERO_G_SERVICE_PAGE_SIZE = 50;
 
 type ZeroGNetwork = "mainnet" | "testnet" | "custom";
@@ -166,6 +167,15 @@ function formatZeroGAmount(amount: bigint): string {
     "$1",
   );
   return normalized === "" ? "0" : normalized;
+}
+
+function unwrapZeroGErrorMessage(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  return raw.replace(/^(?:Error:\s*)+/i, "").trim() || "Unknown 0G error.";
+}
+
+function isZeroGCallFailedMessage(message: string): boolean {
+  return /callfailed|execution reverted|require\(false\)/i.test(message);
 }
 
 function normalizeProviderAddress(value: string): string {
@@ -570,7 +580,50 @@ export async function fundZeroGProviderAccount(
     invalidRequest("Fund the main 0G account before transferring to a provider.");
   }
 
-  await broker.ledger.transferFund(parsed.providerAddress, "inference", amountUnits);
+  const providerAccount = await loadProviderAccountSafe(broker, parsed.providerAddress);
+  const providerUserAcknowledged = await readUserAcknowledged(
+    broker,
+    parsed.providerAddress,
+    providerAccount.data?.acknowledged ?? false,
+  );
+
+  let remainingAmountUnits = amountUnits;
+  try {
+    if (!providerUserAcknowledged) {
+      if (typeof broker.inference.acknowledgeProviderSigner !== "function") {
+        throw new ZeroGOperationError(
+          "UNAVAILABLE",
+          "The installed 0G broker does not support provider acknowledgement.",
+        );
+      }
+
+      if (!providerAccount.exists) {
+        if (amountUnits < ZERO_G_MIN_PROVIDER_TRANSFER_UNITS) {
+          invalidRequest(
+            "The first transfer to a 0G provider must be at least 1 0G so the provider sub-account can be initialized.",
+          );
+        }
+        await broker.inference.acknowledgeProviderSigner(parsed.providerAddress);
+        remainingAmountUnits -= ZERO_G_MIN_PROVIDER_TRANSFER_UNITS;
+      } else {
+        await broker.inference.acknowledgeProviderSigner(parsed.providerAddress);
+      }
+    }
+
+    if (remainingAmountUnits > 0n) {
+      await broker.ledger.transferFund(parsed.providerAddress, "inference", remainingAmountUnits);
+    }
+  } catch (err) {
+    const message = unwrapZeroGErrorMessage(err);
+    if (!providerUserAcknowledged && isZeroGCallFailedMessage(message)) {
+      throw new ZeroGOperationError(
+        "UNAVAILABLE",
+        "0G rejected the first provider-funding transaction while initializing or acknowledging the provider account. Try Acknowledge Provider first, then retry the transfer.",
+      );
+    }
+    throw err;
+  }
+
   return await getZeroGAccountSummary({ model: params.model }, deps);
 }
 
@@ -586,6 +639,18 @@ export async function acknowledgeZeroGProvider(
     );
   }
 
-  await broker.inference.acknowledgeProviderSigner(parsed.providerAddress);
+  try {
+    await broker.inference.acknowledgeProviderSigner(parsed.providerAddress);
+  } catch (err) {
+    const message = unwrapZeroGErrorMessage(err);
+    if (isZeroGCallFailedMessage(message)) {
+      throw new ZeroGOperationError(
+        "UNAVAILABLE",
+        "0G rejected the provider acknowledgement transaction. Make sure the main 0G account has at least 1 0G available, then retry acknowledgement.",
+      );
+    }
+    throw err;
+  }
+
   return await getZeroGAccountSummary({ model: params.model }, deps);
 }

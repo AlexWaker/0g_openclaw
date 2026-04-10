@@ -211,11 +211,61 @@ describe("0G account helper", () => {
     );
   });
 
+  it("initializes and acknowledges a missing provider account before funding the requested amount", async () => {
+    const broker = createBroker();
+    broker.inference.getAccount.mockRejectedValueOnce(new Error("Sub-account not found"));
+    broker.inference.userAcknowledged.mockRejectedValueOnce(new Error("Sub-account not found"));
+
+    await fundZeroGProviderAccount(
+      { model: QUALIFIED_MODEL, amount: "2.25" },
+      createDeps({ broker }),
+    );
+
+    expect(broker.inference.acknowledgeProviderSigner).toHaveBeenCalledWith(PROVIDER);
+    expect(broker.ledger.transferFund).toHaveBeenCalledWith(
+      PROVIDER,
+      "inference",
+      1250000000000000000n,
+    );
+  });
+
+  it("requires at least 1 0G for the first provider transfer", async () => {
+    const broker = createBroker();
+    broker.inference.getAccount.mockRejectedValueOnce(new Error("Sub-account not found"));
+    broker.inference.userAcknowledged.mockRejectedValueOnce(new Error("Sub-account not found"));
+
+    await expect(
+      fundZeroGProviderAccount({ model: QUALIFIED_MODEL, amount: "0.5" }, createDeps({ broker })),
+    ).rejects.toMatchObject({
+      code: "INVALID_REQUEST",
+      message:
+        "The first transfer to a 0G provider must be at least 1 0G so the provider sub-account can be initialized.",
+    });
+
+    expect(broker.inference.acknowledgeProviderSigner).not.toHaveBeenCalled();
+    expect(broker.ledger.transferFund).not.toHaveBeenCalled();
+  });
+
   it("acknowledges a provider through the broker", async () => {
     const broker = createBroker();
 
     await acknowledgeZeroGProvider({ model: QUALIFIED_MODEL }, createDeps({ broker }));
 
     expect(broker.inference.acknowledgeProviderSigner).toHaveBeenCalledWith(PROVIDER);
+  });
+
+  it("wraps generic acknowledgement reverts with an actionable message", async () => {
+    const broker = createBroker();
+    broker.inference.acknowledgeProviderSigner.mockRejectedValueOnce(
+      new Error("Error: CallFailed"),
+    );
+
+    await expect(
+      acknowledgeZeroGProvider({ model: QUALIFIED_MODEL }, createDeps({ broker })),
+    ).rejects.toMatchObject({
+      code: "UNAVAILABLE",
+      message:
+        "0G rejected the provider acknowledgement transaction. Make sure the main 0G account has at least 1 0G available, then retry acknowledgement.",
+    });
   });
 });

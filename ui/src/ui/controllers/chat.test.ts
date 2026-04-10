@@ -562,6 +562,66 @@ describe("sendChatMessage", () => {
       ],
     });
   });
+
+  it("prompts 0G funding when chat send fails because the selected provider lacks balance", async () => {
+    const request = vi
+      .fn()
+      .mockRejectedValue(new Error("All models failed: 0g/svc_test: Insufficient balance"));
+    const state = createState({
+      connected: true,
+      client: { request } as unknown as ChatState["client"],
+      chatModelOverrides: {
+        main: { kind: "qualified", value: "0g/svc_test" },
+      },
+      chatModelCatalog: [],
+      sessionsResult: null,
+      zeroGFundingDialogOpen: false,
+      zeroGFundingBusy: false,
+      zeroGFundingAction: null,
+      zeroGFundingMainAmount: "",
+      zeroGFundingProviderAmount: "",
+      zeroGFundingError: null,
+      zeroGFundingSuccess: null,
+    });
+
+    const result = await sendChatMessage(state, "hello");
+
+    expect(result).toBeNull();
+    expect(state.zeroGFundingDialogOpen).toBe(true);
+    expect(state.zeroGFundingError).toContain("0G balance is too low");
+    expect(state.lastError).toContain("Add funds");
+  });
+});
+
+describe("handleChatEvent", () => {
+  it("opens the 0G funding dialog when the run fails because the provider balance is too low", () => {
+    const state = createState({
+      sessionKey: "main",
+      chatRunId: "run-1",
+      zeroGAccountSummary: { selectedModel: "0g/svc_test" },
+      zeroGFundingDialogOpen: false,
+      zeroGFundingBusy: false,
+      zeroGFundingAction: null,
+      zeroGFundingMainAmount: "",
+      zeroGFundingProviderAmount: "",
+      zeroGFundingError: null,
+      zeroGFundingSuccess: null,
+    });
+
+    const payload: ChatEventPayload = {
+      runId: "run-1",
+      sessionKey: "main",
+      state: "error",
+      errorMessage:
+        "All models failed: 0g/svc_test: Sub-account not found. Initialize it by transferring funds first.",
+    };
+
+    expect(handleChatEvent(state, payload)).toBe("error");
+    expect(state.zeroGFundingDialogOpen).toBe(true);
+    expect(state.zeroGFundingError).toContain("0G balance is too low");
+    expect(state.lastError).toContain("Add funds");
+    expect(state.chatRunId).toBe(null);
+  });
 });
 
 describe("abortChatRun", () => {

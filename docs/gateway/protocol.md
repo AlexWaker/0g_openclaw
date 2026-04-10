@@ -188,6 +188,19 @@ The Gateway treats these as **claims** and enforces server-side allowlists.
     caller-supplied auth or delivery context.
   - The response is session-scoped and reflects what the active conversation can use right now,
     including core, plugin, and channel tools.
+- Operators may call `wallet.ethereum.get` (`operator.read`) to fetch the configured Ethereum
+  wallet summary for the current host. The response exposes only `address`, `kind`, and `source`;
+  mnemonic phrases and private keys never leave the gateway.
+- Operators may call `zerog.account.get` (`operator.read`) with a qualified `0g/...` model id to
+  fetch the selected provider's 0G account summary. The response includes only wallet metadata,
+  main-ledger balances, provider sub-account balances, pricing, acknowledgement state, and the
+  provider endpoint required for chat readiness checks.
+- Operators may call `zerog.account.fundMain` (`operator.write`) to fund the configured wallet's
+  main 0G ledger. If the wallet has not created a ledger yet, the first funding call creates it.
+- Operators may call `zerog.account.fundProvider` (`operator.write`) to transfer funds from the
+  main 0G ledger into the selected provider's inference sub-account.
+- Operators may call `zerog.account.acknowledgeProvider` (`operator.write`) to acknowledge the
+  selected provider for the configured wallet before starting chat requests.
 
 ## Exec approvals
 

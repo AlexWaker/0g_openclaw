@@ -182,6 +182,18 @@ import {
   type PushTestParams,
   PushTestParamsSchema,
   PushTestResultSchema,
+  type EthereumWalletSummary,
+  EthereumWalletSummarySchema,
+  type ZeroGAcknowledgeProviderParams,
+  ZeroGAcknowledgeProviderParamsSchema,
+  type ZeroGAccountGetParams,
+  ZeroGAccountGetParamsSchema,
+  type ZeroGAccountSummary,
+  ZeroGAccountSummarySchema,
+  type ZeroGFundMainParams,
+  ZeroGFundMainParamsSchema,
+  type ZeroGFundProviderParams,
+  ZeroGFundProviderParamsSchema,
   type PresenceEntry,
   PresenceEntrySchema,
   ProtocolSchemas,
@@ -281,6 +293,22 @@ export const validateConnectParams = ajv.compile<ConnectParams>(ConnectParamsSch
 export const validateRequestFrame = ajv.compile<RequestFrame>(RequestFrameSchema);
 export const validateResponseFrame = ajv.compile<ResponseFrame>(ResponseFrameSchema);
 export const validateEventFrame = ajv.compile<EventFrame>(EventFrameSchema);
+export const validateEthereumWalletSummary = ajv.compile<EthereumWalletSummary>(
+  EthereumWalletSummarySchema,
+);
+export const validateZeroGAccountGetParams = ajv.compile<ZeroGAccountGetParams>(
+  ZeroGAccountGetParamsSchema,
+);
+export const validateZeroGFundMainParams =
+  ajv.compile<ZeroGFundMainParams>(ZeroGFundMainParamsSchema);
+export const validateZeroGFundProviderParams = ajv.compile<ZeroGFundProviderParams>(
+  ZeroGFundProviderParamsSchema,
+);
+export const validateZeroGAcknowledgeProviderParams = ajv.compile<ZeroGAcknowledgeProviderParams>(
+  ZeroGAcknowledgeProviderParamsSchema,
+);
+export const validateZeroGAccountSummary =
+  ajv.compile<ZeroGAccountSummary>(ZeroGAccountSummarySchema);
 export const validateSendParams = ajv.compile(SendParamsSchema);
 export const validatePollParams = ajv.compile<PollParams>(PollParamsSchema);
 export const validateAgentParams = ajv.compile(AgentParamsSchema);
@@ -507,6 +535,12 @@ export {
   ResponseFrameSchema,
   EventFrameSchema,
   GatewayFrameSchema,
+  EthereumWalletSummarySchema,
+  ZeroGAccountGetParamsSchema,
+  ZeroGFundMainParamsSchema,
+  ZeroGFundProviderParamsSchema,
+  ZeroGAcknowledgeProviderParamsSchema,
+  ZeroGAccountSummarySchema,
   PresenceEntrySchema,
   SnapshotSchema,
   ErrorShapeSchema,
@@ -620,6 +654,12 @@ export type {
   RequestFrame,
   ResponseFrame,
   EventFrame,
+  EthereumWalletSummary,
+  ZeroGAccountGetParams,
+  ZeroGFundMainParams,
+  ZeroGFundProviderParams,
+  ZeroGAcknowledgeProviderParams,
+  ZeroGAccountSummary,
   PresenceEntry,
   Snapshot,
   ErrorShape,

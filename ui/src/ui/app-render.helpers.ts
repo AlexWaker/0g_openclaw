@@ -14,6 +14,16 @@ import {
 import { refreshVisibleToolsEffectiveForCurrentSession } from "./controllers/agents.ts";
 import { ChatState, loadChatHistory } from "./controllers/chat.ts";
 import { loadSessions } from "./controllers/sessions.ts";
+import {
+  acknowledgeZeroGProvider,
+  closeZeroGFundingDialog,
+  fundZeroGMainAccount,
+  fundZeroGProviderAccount,
+  loadZeroGAccountState,
+  openZeroGFundingDialog,
+  resolveSelectedZeroGModelValue,
+  type ZeroGFundingState,
+} from "./controllers/zero-g.ts";
 import { icons } from "./icons.ts";
 import { iconForTab, pathForTab, titleForTab, type Tab } from "./navigation.ts";
 import type { ThemeTransitionContext } from "./theme-transition.ts";
@@ -133,6 +143,7 @@ function renderCronFilterIcon(hiddenCount: number) {
 export function renderChatSessionSelect(state: AppViewState) {
   const sessionGroups = resolveSessionOptionGroups(state, state.sessionKey, state.sessionsResult);
   const modelSelect = renderChatModelSelect(state);
+  const zeroGAccountStrip = renderZeroGAccountStrip(state);
   return html`
     <div class="chat-controls__session-row">
       <label class="field chat-controls__session">
@@ -162,7 +173,290 @@ export function renderChatSessionSelect(state: AppViewState) {
           )}
         </select>
       </label>
-      ${modelSelect}
+      ${modelSelect} ${zeroGAccountStrip}
+    </div>
+  `;
+}
+
+function truncateAddress(address: string): string {
+  return address.length <= 12 ? address : `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+function formatCompactZeroGAmount(amount: string | null | undefined): string {
+  if (!amount) {
+    return "0";
+  }
+  const [whole, fraction = ""] = amount.split(".");
+  if (!fraction) {
+    return whole;
+  }
+  const compactFraction = fraction.slice(0, 4).replace(/0+$/, "");
+  return compactFraction ? `${whole}.${compactFraction}` : whole;
+}
+
+function resolveVisibleZeroGAccountSummary(state: AppViewState) {
+  const selectedModel = resolveSelectedZeroGModelValue(state as unknown as ZeroGFundingState);
+  const summary = state.zeroGAccountSummary;
+  if (!selectedModel || !summary || summary.selectedModel !== selectedModel) {
+    return null;
+  }
+  return summary;
+}
+
+function renderZeroGFundingOverlay(state: AppViewState) {
+  const summary = resolveVisibleZeroGAccountSummary(state);
+  if (!summary || !state.zeroGFundingDialogOpen) {
+    return nothing;
+  }
+
+  const busyAction = state.zeroGFundingAction;
+  const canAcknowledge =
+    summary.service.teeSignerAcknowledged && !summary.providerAccount.userAcknowledged;
+
+  return html`
+    <div
+      class="exec-approval-overlay zerog-funding-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-live="polite"
+      @click=${(event: MouseEvent) => {
+        if (event.target === event.currentTarget) {
+          closeZeroGFundingDialog(state as unknown as ZeroGFundingState);
+        }
+      }}
+    >
+      <div class="exec-approval-card zerog-funding-card">
+        <div class="exec-approval-header">
+          <div>
+            <div class="exec-approval-title">Fund 0G Accounts</div>
+            <div class="exec-approval-sub">
+              ${summary.service.model} · ${truncateAddress(summary.providerAddress)}
+            </div>
+          </div>
+          <button
+            class="btn btn--sm"
+            type="button"
+            ?disabled=${state.zeroGFundingBusy}
+            @click=${() => closeZeroGFundingDialog(state as unknown as ZeroGFundingState)}
+          >
+            Close
+          </button>
+        </div>
+
+        <div class="zerog-funding-grid">
+          <section class="zerog-funding-section">
+            <div class="zerog-funding-section__header">
+              <div class="zerog-funding-section__title">Main 0G account</div>
+              <div class="pill zerog-account-metric">
+                <span class="label">Available</span>
+                <span class="mono"
+                  >${formatCompactZeroGAmount(summary.mainLedger.availableBalance)} 0G</span
+                >
+              </div>
+            </div>
+            <div class="callout zerog-funding-callout">
+              ${summary.mainLedger.exists
+                ? "Deposits increase the balance available for provider transfers."
+                : "Your first deposit creates the main 0G ledger for this wallet."}
+            </div>
+            <label class="field zerog-funding-field">
+              <span>Add funds</span>
+              <input
+                data-zerog-main-amount="true"
+                type="text"
+                inputmode="decimal"
+                placeholder="1.0"
+                .value=${state.zeroGFundingMainAmount}
+                @input=${(event: Event) => {
+                  state.zeroGFundingMainAmount = (event.target as HTMLInputElement).value;
+                }}
+              />
+            </label>
+            <button
+              class="btn btn--sm primary"
+              data-zerog-fund-main="true"
+              type="button"
+              ?disabled=${state.zeroGFundingBusy}
+              @click=${() => void fundZeroGMainAccount(state as unknown as ZeroGFundingState)}
+            >
+              ${busyAction === "main" ? "Funding…" : "Fund Main Account"}
+            </button>
+          </section>
+
+          <section class="zerog-funding-section">
+            <div class="zerog-funding-section__header">
+              <div class="zerog-funding-section__title">Provider sub-account</div>
+              <div class="pill zerog-account-metric">
+                <span class="label">Available</span>
+                <span class="mono"
+                  >${formatCompactZeroGAmount(summary.providerAccount.availableBalance)} 0G</span
+                >
+              </div>
+            </div>
+            <div class="callout zerog-funding-callout">
+              Transfers move funds from the main ledger into this provider-specific account.
+            </div>
+            <label class="field zerog-funding-field">
+              <span>Transfer funds</span>
+              <input
+                data-zerog-provider-amount="true"
+                type="text"
+                inputmode="decimal"
+                placeholder="1.0"
+                .value=${state.zeroGFundingProviderAmount}
+                @input=${(event: Event) => {
+                  state.zeroGFundingProviderAmount = (event.target as HTMLInputElement).value;
+                }}
+              />
+            </label>
+            <button
+              class="btn btn--sm primary"
+              data-zerog-fund-provider="true"
+              type="button"
+              ?disabled=${state.zeroGFundingBusy || !summary.mainLedger.exists}
+              @click=${() => void fundZeroGProviderAccount(state as unknown as ZeroGFundingState)}
+            >
+              ${busyAction === "provider" ? "Funding…" : "Fund Provider Account"}
+            </button>
+            <div class="pill zerog-account-metric zerog-account-metric--muted">
+              <span class="label">Pending refund</span>
+              <span class="mono"
+                >${formatCompactZeroGAmount(summary.providerAccount.pendingRefund)} 0G</span
+              >
+            </div>
+          </section>
+        </div>
+
+        ${canAcknowledge
+          ? html`<div class="zerog-acknowledge-row">
+              <div class="callout zerog-funding-callout">
+                This wallet still needs to acknowledge the selected provider before chat requests
+                can run.
+              </div>
+              <button
+                class="btn btn--sm"
+                data-zerog-acknowledge-provider="true"
+                type="button"
+                ?disabled=${state.zeroGFundingBusy}
+                @click=${() => void acknowledgeZeroGProvider(state as unknown as ZeroGFundingState)}
+              >
+                ${busyAction === "acknowledge" ? "Acknowledging…" : "Acknowledge Provider"}
+              </button>
+            </div>`
+          : nothing}
+        ${summary.service.teeSignerAcknowledged === false
+          ? html`<div class="callout danger zerog-funding-callout">
+              This provider is not acknowledged by 0G yet, so chat will stay unavailable until the
+              provider becomes ready upstream.
+            </div>`
+          : nothing}
+        ${state.zeroGFundingError
+          ? html`<div class="callout danger zerog-funding-callout">${state.zeroGFundingError}</div>`
+          : nothing}
+        ${state.zeroGFundingSuccess
+          ? html`<div class="callout zerog-funding-callout">${state.zeroGFundingSuccess}</div>`
+          : nothing}
+      </div>
+    </div>
+  `;
+}
+
+function renderZeroGAccountStrip(state: AppViewState) {
+  const selectedModel = resolveSelectedZeroGModelValue(state as unknown as ZeroGFundingState);
+  if (!selectedModel) {
+    return nothing;
+  }
+
+  if (state.zeroGAccountLoading) {
+    return html`
+      <div class="zerog-account-strip" data-zerog-account-strip="true">
+        <span class="zerog-account-status">0G loading…</span>
+      </div>
+    `;
+  }
+
+  if (state.zeroGAccountError) {
+    return html`
+      <div class="zerog-account-strip" data-zerog-account-strip="true">
+        <span class="pill danger zerog-account-issue" title=${state.zeroGAccountError}
+          >${state.zeroGAccountError}</span
+        >
+        <button
+          class="btn btn--sm"
+          type="button"
+          @click=${() => void loadZeroGAccountState(state as unknown as ZeroGFundingState)}
+        >
+          Retry
+        </button>
+      </div>
+    `;
+  }
+
+  const summary = resolveVisibleZeroGAccountSummary(state);
+  if (!summary) {
+    return nothing;
+  }
+
+  const priceLabel = `${formatCompactZeroGAmount(summary.service.inputPrice)} / ${formatCompactZeroGAmount(summary.service.outputPrice)}`;
+
+  return html`
+    <div class="zerog-account-strip" data-zerog-account-strip="true">
+      <span
+        class="zerog-account-status ${summary.ready
+          ? "zerog-account-status--ready"
+          : "zerog-account-status--attention"}"
+        title=${summary.ready
+          ? "The selected 0G provider is ready for chat."
+          : summary.issues.join(" ")}
+      >
+        ${summary.ready ? "0G ready" : "0G needs setup"}
+      </span>
+      <span class="pill zerog-account-metric" title=${summary.service.model}
+        ><span class="label">Model</span><span>${summary.service.model}</span></span
+      >
+      <span class="pill zerog-account-metric" title=${summary.providerAddress}
+        ><span class="label">Provider</span
+        ><span class="mono">${truncateAddress(summary.providerAddress)}</span></span
+      >
+      <span class="pill zerog-account-metric"
+        ><span class="label">Main</span
+        ><span class="mono"
+          >${formatCompactZeroGAmount(summary.mainLedger.availableBalance)} 0G</span
+        ></span
+      >
+      <span class="pill zerog-account-metric"
+        ><span class="label">Provider</span
+        ><span class="mono"
+          >${formatCompactZeroGAmount(summary.providerAccount.availableBalance)} 0G</span
+        ></span
+      >
+      <span class="pill zerog-account-metric zerog-account-metric--muted"
+        ><span class="label">Price</span><span class="mono">${priceLabel}</span></span
+      >
+      ${summary.issues[0]
+        ? html`<span class="pill danger zerog-account-issue" title=${summary.issues.join(" ")}
+            >${summary.issues[0]}</span
+          >`
+        : nothing}
+      <button
+        class="btn btn--sm"
+        type="button"
+        data-zerog-refresh="true"
+        ?disabled=${state.zeroGFundingBusy}
+        @click=${() => void loadZeroGAccountState(state as unknown as ZeroGFundingState)}
+      >
+        Refresh
+      </button>
+      <button
+        class="btn btn--sm primary"
+        type="button"
+        data-zerog-open-funding="true"
+        ?disabled=${state.zeroGFundingBusy}
+        @click=${() => openZeroGFundingDialog(state as unknown as ZeroGFundingState)}
+      >
+        Add Funds
+      </button>
+      ${renderZeroGFundingOverlay(state)}
     </div>
   `;
 }
@@ -514,7 +808,10 @@ export function switchChatSession(state: AppViewState, nextSessionKey: string) {
     true,
   );
   void loadChatHistory(state as unknown as ChatState);
-  void refreshSessionOptions(state);
+  void (async () => {
+    await refreshSessionOptions(state);
+    await loadZeroGAccountState(state as unknown as ZeroGFundingState);
+  })();
 }
 
 async function refreshSessionOptions(state: AppViewState) {
@@ -580,6 +877,7 @@ async function switchChatModel(state: AppViewState, nextModel: string) {
     });
     void refreshVisibleToolsEffectiveForCurrentSession(state);
     await refreshSessionOptions(state);
+    await loadZeroGAccountState(state as unknown as ZeroGFundingState, nextModel || null);
   } catch (err) {
     // Roll back so the picker reflects the actual server model.
     state.chatModelOverrides = { ...state.chatModelOverrides, [targetSessionKey]: prevOverride };

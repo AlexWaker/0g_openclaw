@@ -759,6 +759,108 @@
   max-width: 320px;
 }
 
+.zerog-account-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.zerog-account-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--secondary) 92%, transparent);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.zerog-account-status--ready {
+  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
+  background: color-mix(in srgb, var(--success) 12%, var(--secondary));
+  color: color-mix(in srgb, var(--success) 80%, var(--text));
+}
+
+.zerog-account-status--attention {
+  border-color: color-mix(in srgb, var(--warning) 35%, var(--border));
+  background: color-mix(in srgb, var(--warning) 12%, var(--secondary));
+  color: color-mix(in srgb, var(--warning) 80%, var(--text));
+}
+
+.zerog-account-metric {
+  white-space: nowrap;
+}
+
+.zerog-account-metric--muted {
+  opacity: 0.88;
+}
+
+.zerog-account-issue {
+  max-width: min(420px, 100%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zerog-funding-overlay {
+  z-index: 1200;
+}
+
+.zerog-funding-card {
+  width: min(760px, calc(100vw - 32px));
+  max-width: 760px;
+}
+
+.zerog-funding-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.zerog-funding-section {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--secondary) 85%, transparent);
+}
+
+.zerog-funding-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.zerog-funding-section__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.zerog-funding-field {
+  margin: 0;
+}
+
+.zerog-funding-callout {
+  margin: 0;
+}
+
+.zerog-acknowledge-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
 .chat-controls__thinking {
   display: flex;
   align-items: center;
@@ -820,6 +922,14 @@
 
   .chat-controls {
     gap: 8px;
+  }
+
+  .zerog-funding-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .zerog-account-strip {
+    width: 100%;
   }
 
   .chat-compose__field textarea {

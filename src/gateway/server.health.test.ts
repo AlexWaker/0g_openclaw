@@ -1,8 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { resolveEthereumWalletPath } from "../config/paths.js";
 import { emitAgentEvent } from "../infra/agent-events.js";
 import { emitHeartbeatEvent } from "../infra/heartbeat-events.js";
 import { GATEWAY_CLIENT_MODES, GATEWAY_CLIENT_NAMES } from "../utils/message-channel.js";
+import {
+  buildStoredEthereumWalletSecret,
+  writeStoredEthereumWalletSecret,
+} from "../wallet/ethereum-wallet.js";
 import { startGatewayServerHarness, type GatewayServerHarness } from "./server.e2e-ws-harness.js";
 import { installGatewayTestHooks, onceMessage } from "./test-helpers.js";
 
@@ -119,6 +124,38 @@ describe("gateway server health/presence", () => {
     );
     expect(toggle.ok).toBe(true);
     expect((toggle.payload as { enabled?: boolean } | undefined)?.enabled).toBe(false);
+
+    ws.close();
+  });
+
+  test("returns the configured Ethereum wallet summary without exposing secrets", async () => {
+    writeStoredEthereumWalletSecret(
+      buildStoredEthereumWalletSecret({
+        kind: "mnemonic",
+        value: "test test test test test test test test test test test junk",
+        source: "generated",
+      }),
+      resolveEthereumWalletPath(),
+    );
+
+    const { ws } = await harness.openClient();
+
+    const walletP = onceMessage<GatewayFrame>(ws, (o) => o.type === "res" && o.id === "wallet-1");
+    ws.send(
+      JSON.stringify({
+        type: "req",
+        id: "wallet-1",
+        method: "wallet.ethereum.get",
+      }),
+    );
+
+    const wallet = await walletP;
+    expect(wallet.ok).toBe(true);
+    expect(wallet.payload).toEqual({
+      address: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      kind: "mnemonic",
+      source: "generated",
+    });
 
     ws.close();
   });

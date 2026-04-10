@@ -6,7 +6,9 @@ import {
   buildStoredEthereumWalletSecret,
   createEthereumMnemonic,
   deleteStoredEthereumWalletSecret,
+  deriveEthereumWalletAddress,
   readStoredEthereumWalletSecret,
+  readStoredEthereumWalletSummary,
   validateEthereumMnemonicInput,
   validateEthereumPrivateKeyInput,
   writeStoredEthereumWalletSecret,
@@ -55,6 +57,28 @@ describe("ethereum wallet secret helpers", () => {
     expect(result).toEqual({ ok: true, value: mnemonic });
   });
 
+  it("derives the expected wallet address from supported secret kinds", () => {
+    expect(
+      deriveEthereumWalletAddress(
+        buildStoredEthereumWalletSecret({
+          kind: "mnemonic",
+          value: "test test test test test test test test test test test junk",
+          source: "generated",
+        }),
+      ),
+    ).toBe("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+
+    expect(
+      deriveEthereumWalletAddress(
+        buildStoredEthereumWalletSecret({
+          kind: "private-key",
+          value: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+          source: "user",
+        }),
+      ),
+    ).toBe("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+  });
+
   it("writes and reads wallet secrets with secure permissions", async () => {
     await withTempDir("openclaw-eth-wallet-", async (dir) => {
       const pathname = path.join(dir, "ethereum-wallet.json");
@@ -71,6 +95,26 @@ describe("ethereum wallet secret helpers", () => {
 
       const stat = await fs.stat(pathname);
       expect(stat.mode & 0o777).toBe(0o600);
+    });
+  });
+
+  it("reads a wallet summary without exposing secret material", async () => {
+    await withTempDir("openclaw-eth-wallet-summary-", async (dir) => {
+      const pathname = path.join(dir, "ethereum-wallet.json");
+      writeStoredEthereumWalletSecret(
+        buildStoredEthereumWalletSecret({
+          kind: "mnemonic",
+          value: "test test test test test test test test test test test junk",
+          source: "generated",
+        }),
+        pathname,
+      );
+
+      expect(readStoredEthereumWalletSummary(pathname)).toEqual({
+        address: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        kind: "mnemonic",
+        source: "generated",
+      });
     });
   });
 

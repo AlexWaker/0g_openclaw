@@ -242,6 +242,45 @@ function dismissUpdateBanner(updateAvailable: unknown) {
   }
 }
 
+function truncateWalletAddress(address: string): string {
+  if (address.length <= 14) {
+    return address;
+  }
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+function renderTopbarWalletAddress(state: AppViewState) {
+  const address = state.ethereumWalletSummary?.address;
+  if (!address) {
+    return nothing;
+  }
+
+  const sourceLabel =
+    state.ethereumWalletSummary?.source === "generated" ? "generated" : "configured";
+  const copyLabel = `Copy ${sourceLabel} wallet address`;
+
+  return html`
+    <button
+      type="button"
+      class="pill wallet-address-pill"
+      title="${copyLabel}: ${address}"
+      aria-label="${copyLabel}: ${address}"
+      @click=${() => {
+        if (!navigator.clipboard?.writeText) {
+          return;
+        }
+        void navigator.clipboard.writeText(address);
+      }}
+    >
+      <span class="wallet-address-pill__icon" aria-hidden="true">${icons.copy}</span>
+      <span class="wallet-address-pill__label">Wallet</span>
+      <span class="mono wallet-address-pill__address" title="${address}"
+        >${truncateWalletAddress(address)}</span
+      >
+    </button>
+  `;
+}
+
 const AVATAR_DATA_RE = /^data:/i;
 const AVATAR_HTTP_RE = /^https?:\/\//i;
 const COMMUNICATION_SECTION_KEYS = ["channels", "messages", "broadcast", "talk", "audio"] as const;
@@ -460,8 +499,10 @@ export function renderApp(state: AppViewState) {
             </button>
             <div class="topbar-status">
               ${isChat ? renderChatMobileToggle(state) : nothing}
-              <wallet-connect-button class="wallet-connect-slot"></wallet-connect-button>
-              ${renderTopbarThemeModeToggle(state)}
+              ${
+                /* <wallet-connect-button class="wallet-connect-slot"></wallet-connect-button> */ nothing
+              }
+              ${renderTopbarWalletAddress(state)} ${renderTopbarThemeModeToggle(state)}
             </div>
           </div>
         </div>

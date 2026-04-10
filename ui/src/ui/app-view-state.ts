@@ -18,6 +18,7 @@ import type {
   ChannelsStatusSnapshot,
   ConfigSnapshot,
   ConfigUiHints,
+  EthereumWalletSummary,
   HealthSummary,
   LogEntry,
   LogLevel,
@@ -25,6 +26,7 @@ import type {
   ModelCatalogEntry,
   NostrProfile,
   PresenceEntry,
+  ZeroGAccountSummary,
   SessionsUsageResult,
   CostUsageSummary,
   SessionUsageTimeSeries,
@@ -280,6 +282,19 @@ export type AppViewState = {
     healthLoading: boolean;
     healthResult: HealthSummary | null;
     healthError: string | null;
+    ethereumWalletLoading: boolean;
+    ethereumWalletSummary: EthereumWalletSummary | null;
+    ethereumWalletError: string | null;
+    zeroGAccountLoading: boolean;
+    zeroGAccountSummary: ZeroGAccountSummary | null;
+    zeroGAccountError: string | null;
+    zeroGFundingDialogOpen: boolean;
+    zeroGFundingBusy: boolean;
+    zeroGFundingAction: "main" | "provider" | "acknowledge" | null;
+    zeroGFundingMainAmount: string;
+    zeroGFundingProviderAmount: string;
+    zeroGFundingError: string | null;
+    zeroGFundingSuccess: string | null;
     debugLoading: boolean;
     debugStatus: StatusSummary | null;
     debugHealth: HealthSummary | null;

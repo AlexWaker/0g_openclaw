@@ -78,6 +78,7 @@ import type {
   CronJob,
   CronRunLogEntry,
   CronStatus,
+  EthereumWalletSummary,
   HealthSummary,
   LogEntry,
   LogLevel,
@@ -417,6 +418,19 @@ export class OpenClawApp extends LitElement {
   @state() healthLoading = false;
   @state() healthResult: HealthSummary | null = null;
   @state() healthError: string | null = null;
+  @state() ethereumWalletLoading = false;
+  @state() ethereumWalletSummary: EthereumWalletSummary | null = null;
+  @state() ethereumWalletError: string | null = null;
+  @state() zeroGAccountLoading = false;
+  @state() zeroGAccountSummary: import("./types.js").ZeroGAccountSummary | null = null;
+  @state() zeroGAccountError: string | null = null;
+  @state() zeroGFundingDialogOpen = false;
+  @state() zeroGFundingBusy = false;
+  @state() zeroGFundingAction: "main" | "provider" | "acknowledge" | null = null;
+  @state() zeroGFundingMainAmount = "";
+  @state() zeroGFundingProviderAmount = "";
+  @state() zeroGFundingError: string | null = null;
+  @state() zeroGFundingSuccess: string | null = null;
 
   @state() debugLoading = false;
   @state() debugStatus: StatusSummary | null = null;

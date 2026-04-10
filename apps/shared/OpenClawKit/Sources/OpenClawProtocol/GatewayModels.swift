@@ -341,6 +341,146 @@ public struct Snapshot: Codable, Sendable {
     }
 }
 
+public struct EthereumWalletSummary: Codable, Sendable {
+    public let address: AnyCodable
+    public let kind: AnyCodable
+    public let source: AnyCodable
+
+    public init(
+        address: AnyCodable,
+        kind: AnyCodable,
+        source: AnyCodable)
+    {
+        self.address = address
+        self.kind = kind
+        self.source = source
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case address
+        case kind
+        case source
+    }
+}
+
+public struct ZeroGAccountGetParams: Codable, Sendable {
+    public let model: String
+
+    public init(
+        model: String)
+    {
+        self.model = model
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case model
+    }
+}
+
+public struct ZeroGFundMainParams: Codable, Sendable {
+    public let model: String
+    public let amount: String
+
+    public init(
+        model: String,
+        amount: String)
+    {
+        self.model = model
+        self.amount = amount
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case model
+        case amount
+    }
+}
+
+public struct ZeroGFundProviderParams: Codable, Sendable {
+    public let model: String
+    public let amount: String
+
+    public init(
+        model: String,
+        amount: String)
+    {
+        self.model = model
+        self.amount = amount
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case model
+        case amount
+    }
+}
+
+public struct ZeroGAcknowledgeProviderParams: Codable, Sendable {
+    public let model: String
+
+    public init(
+        model: String)
+    {
+        self.model = model
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case model
+    }
+}
+
+public struct ZeroGAccountSummary: Codable, Sendable {
+    public let wallet: EthereumWalletSummary
+    public let selectedmodel: String
+    public let provideraddress: String
+    public let servicetype: AnyCodable
+    public let network: AnyCodable
+    public let rpcurl: String
+    public let ready: Bool
+    public let issues: [String]
+    public let mainledger: [String: AnyCodable]
+    public let provideraccount: [String: AnyCodable]
+    public let service: [String: AnyCodable]
+
+    public init(
+        wallet: EthereumWalletSummary,
+        selectedmodel: String,
+        provideraddress: String,
+        servicetype: AnyCodable,
+        network: AnyCodable,
+        rpcurl: String,
+        ready: Bool,
+        issues: [String],
+        mainledger: [String: AnyCodable],
+        provideraccount: [String: AnyCodable],
+        service: [String: AnyCodable])
+    {
+        self.wallet = wallet
+        self.selectedmodel = selectedmodel
+        self.provideraddress = provideraddress
+        self.servicetype = servicetype
+        self.network = network
+        self.rpcurl = rpcurl
+        self.ready = ready
+        self.issues = issues
+        self.mainledger = mainledger
+        self.provideraccount = provideraccount
+        self.service = service
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case wallet
+        case selectedmodel = "selectedModel"
+        case provideraddress = "providerAddress"
+        case servicetype = "serviceType"
+        case network
+        case rpcurl = "rpcUrl"
+        case ready
+        case issues
+        case mainledger = "mainLedger"
+        case provideraccount = "providerAccount"
+        case service
+    }
+}
+
 public struct ErrorShape: Codable, Sendable {
     public let code: String
     public let message: String
@@ -2617,7 +2757,19 @@ public struct ModelChoice: Codable, Sendable {
     }
 }
 
-public struct ModelsListParams: Codable, Sendable {}
+public struct ModelsListParams: Codable, Sendable {
+    public let includeunallowlisted: Bool?
+
+    public init(
+        includeunallowlisted: Bool?)
+    {
+        self.includeunallowlisted = includeunallowlisted
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case includeunallowlisted = "includeUnallowlisted"
+    }
+}
 
 public struct ModelsListResult: Codable, Sendable {
     public let models: [ModelChoice]

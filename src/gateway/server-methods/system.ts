@@ -7,6 +7,7 @@ import { getLastHeartbeatEvent } from "../../infra/heartbeat-events.js";
 import { setHeartbeatsEnabled } from "../../infra/heartbeat-runner.js";
 import { enqueueSystemEvent, isSystemEventContextChanged } from "../../infra/system-events.js";
 import { listSystemPresence, updateSystemPresence } from "../../infra/system-presence.js";
+import { readStoredEthereumWalletSummary } from "../../wallet/ethereum-wallet.js";
 import { ErrorCodes, errorShape } from "../protocol/index.js";
 import { broadcastPresenceSnapshot } from "../server/presence-events.js";
 import type { GatewayRequestHandlers } from "./types.js";
@@ -22,6 +23,9 @@ export const systemHandlers: GatewayRequestHandlers = {
       },
       undefined,
     );
+  },
+  "wallet.ethereum.get": ({ respond }) => {
+    respond(true, readStoredEthereumWalletSummary(), undefined);
   },
   "last-heartbeat": ({ respond }) => {
     respond(true, getLastHeartbeatEvent(), undefined);

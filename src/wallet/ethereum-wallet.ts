@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { generateMnemonic, validateMnemonic } from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english.js";
+import { Wallet } from "ethers";
 import { resolveEthereumWalletPath } from "../config/paths.js";
 import { readTextFileIfExists, writeJsonFileSecure } from "../secrets/shared.js";
 
@@ -23,6 +24,14 @@ export type StoredEthereumWalletSecret =
       source: EthereumWalletSource;
       createdAtMs: number;
     };
+
+export type EthereumWalletSecretKind = StoredEthereumWalletSecret["kind"];
+
+export type EthereumWalletSummary = {
+  address: string | null;
+  kind: EthereumWalletSecretKind | null;
+  source: EthereumWalletSource | null;
+};
 
 export type EthereumWalletValidationResult =
   | { ok: true; value: string }
@@ -158,6 +167,39 @@ export function readStoredEthereumWalletSecret(
     return isStoredEthereumWalletSecret(parsed) ? parsed : null;
   } catch {
     return null;
+  }
+}
+
+export function deriveEthereumWalletAddress(secret: StoredEthereumWalletSecret): string {
+  return secret.kind === "mnemonic"
+    ? Wallet.fromPhrase(secret.mnemonic).address
+    : new Wallet(secret.privateKey).address;
+}
+
+export function readStoredEthereumWalletSummary(
+  pathname: string = resolveEthereumWalletPath(),
+): EthereumWalletSummary {
+  const secret = readStoredEthereumWalletSecret(pathname);
+  if (!secret) {
+    return {
+      address: null,
+      kind: null,
+      source: null,
+    };
+  }
+
+  try {
+    return {
+      address: deriveEthereumWalletAddress(secret),
+      kind: secret.kind,
+      source: secret.source,
+    };
+  } catch {
+    return {
+      address: null,
+      kind: null,
+      source: null,
+    };
   }
 }
 

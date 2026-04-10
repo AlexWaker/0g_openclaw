@@ -35,6 +35,7 @@ import {
 import { loadHealthState } from "./controllers/health.ts";
 import { loadNodes } from "./controllers/nodes.ts";
 import { loadSessions, subscribeSessions } from "./controllers/sessions.ts";
+import { loadEthereumWalletState } from "./controllers/wallet.ts";
 import {
   resolveGatewayErrorDetailCode,
   type GatewayEventFrame,
@@ -45,6 +46,7 @@ import type { Tab } from "./navigation.ts";
 import type { UiSettings } from "./storage.ts";
 import type {
   AgentsListResult,
+  EthereumWalletSummary,
   PresenceEntry,
   HealthSummary,
   StatusSummary,
@@ -77,6 +79,9 @@ type GatewayHost = {
   healthLoading: boolean;
   healthResult: HealthSummary | null;
   healthError: string | null;
+  ethereumWalletLoading: boolean;
+  ethereumWalletSummary: EthereumWalletSummary | null;
+  ethereumWalletError: string | null;
   debugHealth: HealthSummary | null;
   assistantName: string;
   assistantAvatar: string | null;
@@ -249,6 +254,7 @@ export function connectGateway(host: GatewayHost, options?: ConnectGatewayOption
       void loadAssistantIdentity(host as unknown as OpenClawApp);
       void loadAgents(host as unknown as OpenClawApp);
       void loadHealthState(host as unknown as OpenClawApp);
+      void loadEthereumWalletState(host as unknown as OpenClawApp);
       void loadNodes(host as unknown as OpenClawApp, { quiet: true });
       void loadDevices(host as unknown as OpenClawApp, { quiet: true });
       void refreshActiveTab(host as unknown as Parameters<typeof refreshActiveTab>[0]);

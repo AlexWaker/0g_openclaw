@@ -185,6 +185,37 @@
   align-items: center;
 }
 
+.wallet-address-pill {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: copy;
+  color: inherit;
+}
+
+.wallet-address-pill:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.wallet-address-pill__icon {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+}
+
+.wallet-address-pill__icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.wallet-address-pill__address {
+  max-width: 12ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .topbar-status .pill {
   padding: 6px 10px;
   gap: 6px;

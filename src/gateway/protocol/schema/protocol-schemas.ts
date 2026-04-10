@@ -164,6 +164,14 @@ import {
 } from "./sessions.js";
 import { PresenceEntrySchema, SnapshotSchema, StateVersionSchema } from "./snapshot.js";
 import {
+  EthereumWalletSummarySchema,
+  ZeroGAcknowledgeProviderParamsSchema,
+  ZeroGAccountGetParamsSchema,
+  ZeroGAccountSummarySchema,
+  ZeroGFundMainParamsSchema,
+  ZeroGFundProviderParamsSchema,
+} from "./system.js";
+import {
   WizardCancelParamsSchema,
   WizardNextParamsSchema,
   WizardNextResultSchema,
@@ -184,6 +192,12 @@ export const ProtocolSchemas = {
   PresenceEntry: PresenceEntrySchema,
   StateVersion: StateVersionSchema,
   Snapshot: SnapshotSchema,
+  EthereumWalletSummary: EthereumWalletSummarySchema,
+  ZeroGAccountGetParams: ZeroGAccountGetParamsSchema,
+  ZeroGFundMainParams: ZeroGFundMainParamsSchema,
+  ZeroGFundProviderParams: ZeroGFundProviderParamsSchema,
+  ZeroGAcknowledgeProviderParams: ZeroGAcknowledgeProviderParamsSchema,
+  ZeroGAccountSummary: ZeroGAccountSummarySchema,
   ErrorShape: ErrorShapeSchema,
   AgentEvent: AgentEventSchema,
   SendParams: SendParamsSchema,

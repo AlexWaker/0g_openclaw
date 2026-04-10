@@ -302,6 +302,15 @@
     display: none;
   }
 
+  .topbar-status .wallet-address-pill {
+    max-width: 124px;
+  }
+
+  .topbar-status .wallet-address-pill .mono {
+    display: inline-flex;
+    max-width: 8.5ch;
+  }
+
   .topbar-status .pill span:nth-child(2) {
     display: none;
   }

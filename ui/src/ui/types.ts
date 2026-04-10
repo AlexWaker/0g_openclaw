@@ -298,6 +298,12 @@ export type ConfigSchemaResponse = {
   generatedAt: string;
 };
 
+export type EthereumWalletSummary =
+  import("../../../src/gateway/protocol/index.js").EthereumWalletSummary;
+
+export type ZeroGAccountSummary =
+  import("../../../src/gateway/protocol/index.js").ZeroGAccountSummary;
+
 export type PresenceEntry = {
   instanceId?: string | null;
   host?: string | null;

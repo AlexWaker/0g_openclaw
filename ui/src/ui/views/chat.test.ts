@@ -18,6 +18,50 @@ import type { SessionsListResult } from "../types.ts";
 import { renderChat, type ChatProps } from "./chat.ts";
 import { renderOverview, type OverviewProps } from "./overview.ts";
 
+const ZERO_G_MODEL_VALUE =
+  "0g/svc_eyJwIjoiMHhhYmNkZWYxMjM0NTY3ODkwYWJjZGVmMTIzNDU2Nzg5MGFiY2RlZjEyIiwibSI6IkxhbWEtMy4zLTcwQi1JbnN0cnVjdCIsInQiOiJpbmZlcmVuY2UifQ";
+
+function createZeroGAccountSummary(overrides: Record<string, unknown> = {}) {
+  return {
+    wallet: {
+      address: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      kind: "mnemonic",
+      source: "generated",
+    },
+    selectedModel: ZERO_G_MODEL_VALUE,
+    providerAddress: "0xabcdef1234567890abcdef1234567890abcdef12",
+    serviceType: "inference",
+    network: "mainnet",
+    rpcUrl: "https://evmrpc.0g.ai",
+    ready: true,
+    issues: [],
+    mainLedger: {
+      exists: true,
+      availableBalance: "3",
+      totalBalance: "4",
+    },
+    providerAccount: {
+      exists: true,
+      availableBalance: "1.75",
+      totalBalance: "2",
+      pendingRefund: "0.25",
+      userAcknowledged: true,
+    },
+    service: {
+      model: "Llama-3.3-70B-Instruct",
+      serviceType: "inference",
+      endpoint: "https://provider.0g.ai/v1",
+      url: "https://provider.0g.ai/v1",
+      verifiability: "tee",
+      inputPrice: "0.000001",
+      outputPrice: "0.000002",
+      teeSignerAddress: "0x1111111111111111111111111111111111111111",
+      teeSignerAcknowledged: true,
+    },
+    ...overrides,
+  };
+}
+
 function createSessions(): SessionsListResult {
   return {
     ts: 0,
@@ -34,6 +78,7 @@ function createChatHeaderState(
     modelProvider?: string | null;
     models?: ModelCatalogEntry[];
     omitSessionFromList?: boolean;
+    zeroGSummary?: ReturnType<typeof createZeroGAccountSummary> | null;
   } = {},
 ): { state: AppViewState; request: ReturnType<typeof vi.fn> } {
   let currentModel = overrides.model ?? null;
@@ -83,6 +128,40 @@ function createChatHeaderState(
         profile: "coding",
         groups: [],
       };
+    }
+    if (method === "zerog.account.get") {
+      return overrides.zeroGSummary ?? createZeroGAccountSummary();
+    }
+    if (method === "zerog.account.fundMain") {
+      return createZeroGAccountSummary({
+        mainLedger: {
+          exists: true,
+          availableBalance: "4.5",
+          totalBalance: "5.5",
+        },
+      });
+    }
+    if (method === "zerog.account.fundProvider") {
+      return createZeroGAccountSummary({
+        providerAccount: {
+          exists: true,
+          availableBalance: "2.75",
+          totalBalance: "3",
+          pendingRefund: "0.25",
+          userAcknowledged: true,
+        },
+      });
+    }
+    if (method === "zerog.account.acknowledgeProvider") {
+      return createZeroGAccountSummary({
+        providerAccount: {
+          exists: true,
+          availableBalance: "1.75",
+          totalBalance: "2",
+          pendingRefund: "0.25",
+          userAcknowledged: true,
+        },
+      });
     }
     throw new Error(`Unexpected request: ${method}`);
   });
@@ -134,6 +213,16 @@ function createChatHeaderState(
     toolsEffectiveResultKey: null,
     toolsEffectiveError: null,
     toolsEffectiveResult: null,
+    zeroGAccountLoading: false,
+    zeroGAccountSummary: overrides.zeroGSummary ?? null,
+    zeroGAccountError: null,
+    zeroGFundingDialogOpen: false,
+    zeroGFundingBusy: false,
+    zeroGFundingAction: null,
+    zeroGFundingMainAmount: "",
+    zeroGFundingProviderAmount: "",
+    zeroGFundingError: null,
+    zeroGFundingSuccess: null,
     applySettings(next: AppViewState["settings"]) {
       state.settings = next;
     },
@@ -892,6 +981,83 @@ describe("chat view", () => {
     );
     expect(modelSelect).not.toBeNull();
     expect(modelSelect?.disabled).toBe(true);
+  });
+
+  it("renders the 0G account strip next to the model picker", () => {
+    const { state } = createChatHeaderState({
+      model: ZERO_G_MODEL_VALUE.slice(3),
+      modelProvider: "0g",
+      zeroGSummary: createZeroGAccountSummary(),
+    });
+    const container = document.createElement("div");
+    render(renderChatSessionSelect(state), container);
+
+    expect(container.querySelector('[data-zerog-account-strip="true"]')).not.toBeNull();
+    expect(container.textContent).toContain("0G ready");
+    expect(container.textContent).toContain("Main");
+    expect(container.textContent).toContain("Provider");
+  });
+
+  it("opens the funding overlay and funds the main 0G account", async () => {
+    const { state, request } = createChatHeaderState({
+      model: ZERO_G_MODEL_VALUE.slice(3),
+      modelProvider: "0g",
+      zeroGSummary: createZeroGAccountSummary(),
+    });
+    const container = document.createElement("div");
+    render(renderChatSessionSelect(state), container);
+
+    container
+      .querySelector<HTMLButtonElement>('[data-zerog-open-funding="true"]')
+      ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await flushTasks();
+    render(renderChatSessionSelect(state), container);
+
+    const mainInput = container.querySelector<HTMLInputElement>('[data-zerog-main-amount="true"]');
+    expect(mainInput).not.toBeNull();
+    mainInput!.value = "1.5";
+    mainInput!.dispatchEvent(new Event("input", { bubbles: true }));
+
+    container
+      .querySelector<HTMLButtonElement>('[data-zerog-fund-main="true"]')
+      ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await flushTasks();
+
+    expect(request).toHaveBeenCalledWith("zerog.account.fundMain", {
+      model: ZERO_G_MODEL_VALUE,
+      amount: "1.5",
+    });
+    expect(state.zeroGFundingSuccess).toBe("Main 0G account funded.");
+  });
+
+  it("shows provider acknowledgement inside the funding overlay when needed", async () => {
+    const { state } = createChatHeaderState({
+      model: ZERO_G_MODEL_VALUE.slice(3),
+      modelProvider: "0g",
+      zeroGSummary: createZeroGAccountSummary({
+        ready: false,
+        issues: ["Acknowledge this provider before starting chat."],
+        providerAccount: {
+          exists: true,
+          availableBalance: "1.75",
+          totalBalance: "2",
+          pendingRefund: "0.25",
+          userAcknowledged: false,
+        },
+      }),
+    });
+    const container = document.createElement("div");
+    render(renderChatSessionSelect(state), container);
+
+    container
+      .querySelector<HTMLButtonElement>('[data-zerog-open-funding="true"]')
+      ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await flushTasks();
+    render(renderChatSessionSelect(state), container);
+
+    expect(
+      container.querySelector<HTMLButtonElement>('[data-zerog-acknowledge-provider="true"]'),
+    ).not.toBeNull();
   });
 
   it("keeps the selected model visible when the active session is absent from sessions.list", async () => {

@@ -87,10 +87,15 @@
   align-items: center;
   padding: 0 24px;
   min-height: 58px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--chrome) 90%, var(--accent-subtle)) 0%,
+    color-mix(in srgb, var(--chrome-strong) 94%, var(--accent-2-subtle)) 100%
+  );
   backdrop-filter: blur(12px) saturate(1.6);
   -webkit-backdrop-filter: blur(12px) saturate(1.6);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--accent-glow) 16%, transparent);
 }
 
 .topnav-shell {
@@ -355,7 +360,7 @@
   display: flex;
   min-height: 100%;
   overflow: hidden;
-  border-right: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border));
   transition: width var(--shell-focus-duration) var(--shell-focus-ease);
 }
 
@@ -370,11 +375,19 @@
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-  background: color-mix(in srgb, var(--bg) 96%, var(--bg-elevated) 4%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg) 92%, var(--accent-subtle)) 0%,
+    color-mix(in srgb, var(--bg-elevated) 82%, var(--accent-2-subtle)) 100%
+  );
 }
 
 :root[data-theme-mode="light"] .sidebar {
-  background: color-mix(in srgb, var(--panel) 98%, white 2%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--panel) 96%, var(--accent-subtle)) 0%,
+    color-mix(in srgb, var(--bg-elevated) 94%, var(--accent-2-subtle)) 100%
+  );
 }
 
 .sidebar-shell {
@@ -417,7 +430,7 @@
 
 .sidebar-shell__footer {
   padding: 12px 0 0;
-  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border));
 }
 
 .sidebar-brand {
@@ -432,7 +445,8 @@
   height: 32px;
   flex-shrink: 0;
   border-radius: var(--radius-md);
-  box-shadow: 0 8px 18px color-mix(in srgb, black 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent-glow) 48%, transparent);
 }
 
 .sidebar-brand__copy {
@@ -900,6 +914,10 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent) 8%, transparent) 0%, transparent 22%),
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--accent-2) 6%, transparent) 0%, transparent 18%),
+    var(--bg);
 }
 
 .content > * + * {
@@ -907,7 +925,13 @@
 }
 
 :root[data-theme-mode="light"] .content {
-  background: var(--bg-content);
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 20%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bg-content) 96%, var(--accent-subtle)) 0%,
+      var(--bg-content) 220px
+    );
 }
 
 .content--chat {

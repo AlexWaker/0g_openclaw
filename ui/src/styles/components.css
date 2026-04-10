@@ -10,7 +10,10 @@
   justify-content: center;
   min-height: 100vh;
   min-height: 100dvh;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 14% 12%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 20%),
+    radial-gradient(circle at 82% 10%, color-mix(in srgb, var(--accent-2) 14%, transparent) 0%, transparent 18%),
+    var(--bg);
   padding: 24px;
 }
 
@@ -23,11 +26,16 @@
 
 .login-gate__card {
   width: min(520px, 100%);
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card) 94%, var(--accent-subtle)) 0%,
+    color-mix(in srgb, var(--card) 96%, var(--accent-2-subtle)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border));
   border-radius: var(--radius-lg);
   padding: 32px;
   animation: scale-in 0.25s var(--ease-out);
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--accent-glow) 22%, transparent);
 }
 
 .login-gate__header {
@@ -224,19 +232,24 @@
    =========================================== */
 
 .card {
-  border: 1px solid var(--border);
-  background: var(--card);
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card) 94%, var(--accent-subtle)) 0%,
+    color-mix(in srgb, var(--card) 96%, var(--accent-2-subtle)) 100%
+  );
   border-radius: var(--radius-lg);
   padding: 18px;
   animation: rise 0.25s var(--ease-out) backwards;
   transition:
     border-color var(--duration-normal) var(--ease-out),
     box-shadow var(--duration-normal) var(--ease-out);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--accent-glow) 10%, transparent);
 }
 
 .card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-sm);
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-strong));
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--accent-glow) 18%, transparent);
 }
 
 .card-title {
@@ -397,17 +410,21 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border));
   padding: 5px 11px;
   border-radius: var(--radius-full);
-  background: var(--secondary);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--secondary) 88%, var(--accent-subtle)) 0%,
+    color-mix(in srgb, var(--secondary) 92%, var(--accent-2-subtle)) 100%
+  );
   font-size: 12px;
   font-weight: 500;
   transition: border-color var(--duration-fast) ease;
 }
 
 .pill:hover {
-  border-color: var(--border-strong);
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-strong));
 }
 
 .pill.danger {
@@ -433,8 +450,12 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--border);
-  background: var(--card);
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card) 90%, var(--accent-subtle)) 0%,
+    color-mix(in srgb, var(--card) 94%, var(--accent-2-subtle)) 100%
+  );
   cursor: pointer;
   font-size: 14px;
   line-height: 1;
@@ -464,8 +485,12 @@
   gap: 2px;
   padding: 4px;
   border-radius: var(--radius-full);
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card) 90%, var(--accent-subtle)) 0%,
+    color-mix(in srgb, var(--card) 96%, var(--accent-2-subtle)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border));
   box-shadow: var(--shadow-md);
   opacity: 0;
   visibility: hidden;
@@ -625,8 +650,12 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
+  border: 1px solid color-mix(in srgb, var(--accent) 8%, var(--border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-elevated) 90%, var(--accent-subtle)) 0%,
+    color-mix(in srgb, var(--bg-elevated) 94%, var(--accent-2-subtle)) 100%
+  );
   padding: 8px 14px;
   border-radius: var(--radius-md);
   font-size: 13px;
@@ -640,8 +669,8 @@
 }
 
 .btn:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-strong);
+  background: color-mix(in srgb, var(--bg-hover) 90%, var(--accent-subtle));
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--border-strong));
 }
 
 .btn:active {
@@ -661,15 +690,23 @@
 
 .btn.primary {
   border-color: var(--accent);
-  background: var(--accent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 88%, white 6%) 0%,
+    color-mix(in srgb, var(--accent-2) 44%, var(--accent)) 100%
+  );
   color: var(--primary-foreground);
-  box-shadow: 0 1px 3px var(--accent-subtle);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent-glow) 38%, transparent);
 }
 
 .btn.primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
-  box-shadow: 0 2px 12px var(--accent-glow);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent-hover) 92%, white 5%) 0%,
+    color-mix(in srgb, var(--accent-2) 50%, var(--accent-hover)) 100%
+  );
+  border-color: color-mix(in srgb, var(--accent-hover) 92%, var(--accent-2));
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--accent-glow) 52%, transparent);
 }
 
 /* Keyboard shortcut badge (shadcn style) */
@@ -732,13 +769,13 @@
   padding: 8px;
   min-width: 36px;
   height: 36px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border));
+  background: color-mix(in srgb, var(--card) 86%, var(--accent-subtle));
 }
 
 .btn--icon:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--card) 80%, var(--accent-subtle));
+  border-color: color-mix(in srgb, var(--accent) 20%, var(--border));
 }
 
 .btn--icon svg {
@@ -759,7 +796,7 @@
 }
 
 .btn--ghost:hover {
-  background: var(--bg-hover);
+  background: color-mix(in srgb, var(--bg-hover) 84%, var(--accent-subtle));
   color: var(--text);
   border-color: transparent;
 }
@@ -792,7 +829,11 @@
 .field textarea,
 .field select {
   border: 1px solid var(--input);
-  background: var(--card);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card) 94%, var(--accent-subtle)) 0%,
+    var(--card) 100%
+  );
   border-radius: var(--radius-md);
   padding: 8px 12px;
   outline: none;

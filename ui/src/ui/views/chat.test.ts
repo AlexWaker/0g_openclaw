@@ -490,7 +490,7 @@ describe("chat view", () => {
     );
     expect(welcomeImage).toBeNull();
     expect(logoImage).not.toBeNull();
-    expect(logoImage?.getAttribute("src")).toBe("favicon.svg");
+    expect(logoImage?.getAttribute("src")).toBe("0g-logo.svg");
   });
 
   it("keeps the welcome logo fallback under the mounted base path", () => {
@@ -511,7 +511,7 @@ describe("chat view", () => {
       ".agent-chat__welcome .agent-chat__avatar--logo img",
     );
     expect(logoImage).not.toBeNull();
-    expect(logoImage?.getAttribute("src")).toBe("/openclaw/favicon.svg");
+    expect(logoImage?.getAttribute("src")).toBe("/openclaw/0g-logo.svg");
   });
 
   it("keeps grouped assistant avatar fallbacks under the mounted base path", () => {
@@ -539,7 +539,7 @@ describe("chat view", () => {
       ".chat-group.assistant .chat-avatar--logo",
     );
     expect(groupedLogo).not.toBeNull();
-    expect(groupedLogo?.getAttribute("src")).toBe("/openclaw/favicon.svg");
+    expect(groupedLogo?.getAttribute("src")).toBe("/openclaw/0g-logo.svg");
   });
 
   it("keeps the persisted overview locale selected before i18n hydration finishes", async () => {
